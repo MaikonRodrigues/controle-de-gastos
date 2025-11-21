@@ -1,96 +1,71 @@
-import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
-// ------------------------------------------------------
-// GET /api/cards/[id]/invoices
-// ------------------------------------------------------
+/**
+ * GET /api/cards/[id]/invoices
+ * Retorna todas as faturas do cartão
+ */
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const id = Number(params.id);
-  const cardId = Number(id);
+  try {
+    const cardId = Number(params.id);
 
-  if (isNaN(cardId)) {
+    if (isNaN(cardId)) {
+      return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+    }
+
+    const invoices = await prisma.invoice.findMany({
+      where: { cardId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(invoices);
+  } catch (error) {
+    console.error("Erro ao buscar invoices:", error);
     return NextResponse.json(
-      { error: "CardId inválido" },
-      { status: 400 }
+      { error: "Erro interno ao buscar invoices" },
+      { status: 500 }
     );
   }
+}
 
-  // ------------------------------------------------------
-  // 1) Buscar TODAS as faturas do cartão
-  // ------------------------------------------------------
-  const invoices = await prisma.invoice.findMany({
-    where: { cardId },
-    include: {
-      expenses: true, // despesas normais da fatura
-    },
-    orderBy: [{ year: "desc" }, { month: "desc" }],
-  });
+/**
+ * POST /api/cards/[id]/invoices
+ * Cria uma nova invoice para o cartão
+ */
+export async function POST(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const cardId = Number(params.id);
 
-  // ------------------------------------------------------
-  // 2) Buscar todos os gastos recorrentes desse cartão
-  // ------------------------------------------------------
-  const recurring = await prisma.recurringExpense.findMany({
-    where: { cardId },
-  });
-
-  // ------------------------------------------------------
-  // 3) Função para validar se recorrente pertence ao mês
-  // ------------------------------------------------------
-  function pertenceAoMes(
-    r: {
-      startDate: string | Date;
-      recurrenceMode: string;
-      installments: number | null;
-    },
-    mesBase: Date
-  ) {
-    const start = new Date(r.startDate);
-
-    if (r.recurrenceMode === "infinite") {
-      return mesBase >= start;
+    if (isNaN(cardId)) {
+      return NextResponse.json({ error: "ID inválido" }, { status: 400 });
     }
 
-    if (r.recurrenceMode === "installments") {
-      const index =
-        (mesBase.getFullYear() - start.getFullYear()) * 12 +
-        (mesBase.getMonth() - start.getMonth());
+    const body = await req.json();
 
-      return index >= 0 && index < (r.installments ?? 0);
-    }
+    const invoice = await prisma.invoice.create({
+      data: {
+        cardId,
+        month: body.month,
+        year: body.year,
+        total: body.total ?? 0,
+        paid: false,
+      },
+    });
 
-    return false;
+    return NextResponse.json(invoice, { status: 201 });
+  } catch (error) {
+    console.error("Erro ao criar invoice:", error);
+    return NextResponse.json(
+      { error: "Erro interno ao criar invoice" },
+      { status: 500 }
+    );
   }
-
-  // ------------------------------------------------------
-  // 4) Montar faturas unificando recorrentes + normais
-  // ------------------------------------------------------
-  const enriched = invoices.map((inv: any) => {
-    const mesBase = new Date(inv.year, inv.month - 1, 1);
-
-    const despesasNormais = inv.expenses;
-
-    const recorrentesDoMes = recurring.filter((r: any) =>
-      pertenceAoMes(r, mesBase)
-    );
-
-    const totalNormais = despesasNormais.reduce((s:any, e: any) => s + e.amount, 0);
-    const totalRecorrentes = recorrentesDoMes.reduce(
-      (s: any, r: any) => s + r.amount,
-      0
-    );
-
-    return {
-      ...inv,
-      despesasNormais,
-      recorrentes: recorrentesDoMes,
-      total: totalNormais + totalRecorrentes,
-    };
-  });
-
-  return NextResponse.json(enriched);
 }
