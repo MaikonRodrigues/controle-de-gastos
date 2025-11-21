@@ -1,5 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
+
+const prisma = new PrismaClient();
+
 /**
  * POST /api/cards/[id]/invoices
  * Cria uma nova invoice para o cartão
@@ -11,8 +14,7 @@ export async function POST(
   try {
     const { id } = await context.params;
     const cardId = Number(id);
-    const prisma = new PrismaClient();
-    
+
     if (isNaN(cardId)) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 });
     }
@@ -34,21 +36,15 @@ export async function POST(
     // Criar a fatura com os campos obrigatórios do Prisma
     const invoice = await prisma.invoice.create({
       data: {
-        cardId,
+        cardId, // relação obrigatória é via id
         month: Number(body.month),
         year: Number(body.year),
         total: Number(body.total) ?? 0,
         paid: false,
         paidAt: null,
 
-        // Obrigatórios no Prisma
         closingDay: card.closingDay,
         dueDay: card.dueDay,
-
-        // Relação obrigatória (com base no erro do Prisma)
-        card: {
-          connect: { id: cardId },
-        },
       },
     });
 
