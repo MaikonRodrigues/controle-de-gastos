@@ -59,6 +59,8 @@ export async function POST(
         year: body.year,
         total: body.total ?? 0,
         paid: false,
+        closingDay: body.closingDay,
+        dueDay: body.dueDay,
       },
     });
 
