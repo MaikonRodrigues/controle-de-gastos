@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
@@ -7,18 +7,19 @@ const prisma = new PrismaClient();
    GET → Buscar cartão por ID
 ========================================= */
 export async function GET(
-  req: Request,
-   { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
-  try {   
-    const id = Number(params.id);
+  try {
+    const { id } = await context.params;
+    const cardId = Number(id);
 
-    if (isNaN(id)) {
+    if (isNaN(cardId)) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 });
     }
 
     const card = await prisma.card.findUnique({
-      where: { id },
+      where: { id: cardId },
       include: {
         account: true,
         recurring: true,
@@ -28,7 +29,10 @@ export async function GET(
     });
 
     if (!card) {
-      return NextResponse.json({ error: "Cartão não encontrado" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Cartão não encontrado" },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(card);
@@ -42,20 +46,21 @@ export async function GET(
    PUT → Atualizar cartão
 ========================================= */
 export async function PUT(
-  req: Request,
-   { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
-  try {    
-    const id = Number(params.id);
+  try {
+    const { id } = await context.params;
+    const cardId = Number(id);
 
-    if (isNaN(id)) {
+    if (isNaN(cardId)) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 });
     }
 
     const body = await req.json();
 
     const updatedCard = await prisma.card.update({
-      where: { id },
+      where: { id: cardId },
       data: {
         name: body.name,
         limit: Number(body.limit),

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
@@ -6,15 +6,17 @@ import { authOptions } from "../../auth/[...nextauth]/route";
 const prisma = new PrismaClient();
 
 export async function DELETE(
-   req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
+
   if (!session || !session.user?.id) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const { id } = await params;                   // <<< ESSENCIAL
+  // Next.js 16 → params é uma Promise
+  const { id } = await context.params;
   const recurringId = Number(id);
   const userId = Number(session.user.id);
 
@@ -26,9 +28,7 @@ export async function DELETE(
   }
 
   const existente = await prisma.recurringExpense.findUnique({
-    where: {
-      id: recurringId,              // <<< AGORA FUNCIONA
-    },
+    where: { id: recurringId },
   });
 
   if (!existente || existente.userId !== userId) {

@@ -1,21 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../app/api/auth/[...nextauth]/route";
 
 const prisma = new PrismaClient();
 
+// =========================================
 // GET /api/expenses/[id]
+// =========================================
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const expenseId = Number(params.id);
+  const { id } = await context.params;
+  const expenseId = Number(id);
 
   try {
     const expense = await prisma.expense.findUnique({
@@ -23,7 +26,10 @@ export async function GET(
     });
 
     if (!expense) {
-      return NextResponse.json({ error: "Despesa não encontrada" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Despesa não encontrada" },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(expense);
@@ -36,17 +42,21 @@ export async function GET(
   }
 }
 
+// =========================================
 // PUT /api/expenses/[id]
+// =========================================
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const expenseId = Number(params.id);
+  const { id } = await context.params;
+  const expenseId = Number(id);
+
   const body = await req.json();
   const { title, amount } = body;
 
@@ -69,17 +79,20 @@ export async function PUT(
   }
 }
 
+// =========================================
 // DELETE /api/expenses/[id]
+// =========================================
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const expenseId = Number(params.id);
+  const { id } = await context.params;
+  const expenseId = Number(id);
 
   try {
     await prisma.expense.delete({

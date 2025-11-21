@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -7,11 +7,11 @@ const prisma = new PrismaClient();
 // GET – buscar uma conta específica
 // ===============================
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number(params.id);
+    const { id } = await context.params;
     const contaId = Number(id);
 
     if (isNaN(contaId)) {
@@ -23,7 +23,10 @@ export async function GET(
     });
 
     if (!conta) {
-      return NextResponse.json({ error: "Conta não encontrada" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Conta não encontrada" },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(conta);
@@ -37,18 +40,21 @@ export async function GET(
 // PUT – editar conta
 // ===============================
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number(params.id);
+    const { id } = await context.params;
     const contaId = Number(id);
 
     const body = await req.json();
     const { name, balance } = body;
 
     if (!name) {
-      return NextResponse.json({ error: "Nome é obrigatório" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Nome é obrigatório" },
+        { status: 400 }
+      );
     }
 
     const saldoConvertido = Number(balance);
@@ -71,10 +77,12 @@ export async function PUT(
 // ===============================
 // DELETE – excluir conta
 // ===============================
-export async function DELETE(req: Request,
-  { params }: { params: { id: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = Number(params.id);
+    const { id } = await context.params;
     const contaId = Number(id);
 
     await prisma.account.delete({
@@ -84,6 +92,9 @@ export async function DELETE(req: Request,
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Erro no DELETE /api/contas/[id]:", error);
-    return NextResponse.json({ error: "Erro ao excluir conta" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro ao excluir conta" },
+      { status: 500 }
+    );
   }
 }

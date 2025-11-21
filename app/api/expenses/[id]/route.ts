@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
@@ -9,19 +9,20 @@ const prisma = new PrismaClient();
 // GET
 // =====================
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
+
   if (!session) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const { id } = await context.params;
   const expenseId = Number(id);
 
   const expense = await prisma.expense.findUnique({
-    where: { 
+    where: {
       id: expenseId,
       userId: Number(session.user.id),
     },
@@ -41,20 +42,22 @@ export async function GET(
 // PUT
 // =====================
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
+
   if (!session) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const { id } = await context.params;
   const expenseId = Number(id);
+
   const body = await req.json();
 
   const updated = await prisma.expense.update({
-    where: { 
+    where: {
       id: expenseId,
       userId: Number(session.user.id),
     },
@@ -71,19 +74,20 @@ export async function PUT(
 // DELETE
 // =====================
 export async function DELETE(
- req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
+
   if (!session) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const { id } = await context.params;
   const expenseId = Number(id);
 
   const expense = await prisma.expense.findUnique({
-    where: { 
+    where: {
       id: expenseId,
       userId: Number(session.user.id),
     },

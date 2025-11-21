@@ -1,26 +1,35 @@
 import { PrismaClient } from "@prisma/client";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
 // GET – retorna os dados do cartão
-export async function GET(req: Request, { params }: any) {
-  const id = Number(params.id);
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
+  const cardId = Number(id);
 
   const card = await prisma.card.findUnique({
-    where: { id },
+    where: { id: cardId },
   });
 
   return NextResponse.json(card);
 }
 
 // PUT – edita o cartão
-export async function PUT(req: Request, { params }: any) {
-  const id = Number(params.id);
+export async function PUT(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
+  const cardId = Number(id);
+
   const data = await req.json();
 
   const updated = await prisma.card.update({
-    where: { id },
+    where: { id: cardId },
     data: {
       name: data.name,
       limit: data.limit,

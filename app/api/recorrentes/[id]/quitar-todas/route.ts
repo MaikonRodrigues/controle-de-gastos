@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]/route";
@@ -7,15 +7,18 @@ const prisma = new PrismaClient();
 
 // POST /api/recorrentes/[id]/quitar-todas
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
+
   if (!session || !session.user?.id) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const recurringId = Number(params.id);
+  // Next.js 16 → params agora é Promise
+  const { id } = await context.params;
+  const recurringId = Number(id);
 
   try {
     const recorrente = await prisma.recurringExpense.findUnique({
@@ -36,8 +39,7 @@ export async function POST(
       );
     }
 
-    // Aqui assumo que o valor é por parcela,
-    // e que todas restantes serão quitadas de uma vez.
+    // total = valor da parcela * quantidade de parcelas restantes
     const total = recorrente.amount * recorrente.installments;
 
     const expense = await prisma.expense.create({
@@ -51,7 +53,7 @@ export async function POST(
       },
     });
 
-    // "Desativa" o recorrente definindo installments = 0 (não cairá mais nos meses futuros)
+    // Desativa o recorrente zerando as parcelas futuras
     await prisma.recurringExpense.update({
       where: { id: recurringId },
       data: {

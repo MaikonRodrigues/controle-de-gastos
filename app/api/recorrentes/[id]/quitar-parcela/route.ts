@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]/route";
@@ -7,15 +7,18 @@ const prisma = new PrismaClient();
 
 // POST /api/recorrentes/[id]/quitar-parcela
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
+
   if (!session || !session.user?.id) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const recurringId = Number(params.id);
+  // Next.js 16 → params é Promise
+  const { id } = await context.params;
+  const recurringId = Number(id);
 
   try {
     const recorrente = await prisma.recurringExpense.findUnique({
@@ -29,7 +32,7 @@ export async function POST(
       );
     }
 
-    // Grava a parcela como uma despesa normal
+    // Grava a parcela como despesa normal
     const expense = await prisma.expense.create({
       data: {
         title: recorrente.title,

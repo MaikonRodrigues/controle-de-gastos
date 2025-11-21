@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
@@ -8,11 +8,12 @@ const prisma = new PrismaClient();
  * Retorna todas as faturas do cartão
  */
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cardId = Number(params.id);
+    const { id } = await context.params;
+    const cardId = Number(id);
 
     if (isNaN(cardId)) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 });
@@ -38,11 +39,12 @@ export async function GET(
  * Cria uma nova invoice para o cartão
  */
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cardId = Number(params.id);
+    const { id } = await context.params;
+    const cardId = Number(id);
 
     if (isNaN(cardId)) {
       return NextResponse.json({ error: "ID inválido" }, { status: 400 });
