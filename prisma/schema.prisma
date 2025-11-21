@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  accounts  Account[]
+  cards     Card[]
+  expenses  Expense[]
+  recurring RecurringExpense[]
+
+  categories Category[]
+}
+
+model Account {
+  id        Int      @id @default(autoincrement())
+  name      String
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  cards             Card[]
+  expenses          Expense[]
+  recurringExpenses RecurringExpense[]
+}
+
+model Card {
+  id         Int      @id @default(autoincrement())
+  name       String
+  limit      Float
+  closingDay Int
+  dueDay     Int
+  createdAt  DateTime @default(now())
+
+  account   Account @relation(fields: [accountId], references: [id])
+  accountId Int
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  expenses  Expense[]
+  recurring RecurringExpense[]
+
+  invoices  Invoice[]
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String
+  type     String? @default("expense")
+  createdAt DateTime @default(now())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  expenses Expense[]
+}
+
+model Expense {
+  id        Int      @id @default(autoincrement())
+  title     String
+  amount    Float
+  type      String
+  createdAt DateTime @default(now())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  accountId Int?
+  account   Account? @relation(fields: [accountId], references: [id])
+
+  cardId Int?
+  card   Card? @relation(fields: [cardId], references: [id])
+
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  invoiceId Int?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+}
+
+model RecurringExpense {
+  id             Int      @id @default(autoincrement())
+  title          String
+  amount         Float
+  type           String
+  installments   Int?
+  startDate      DateTime
+  userId         Int
+  accountId      Int?
+  cardId         Int?
+  recurrenceMode String   @default("installments")
+
+  user    User     @relation(fields: [userId], references: [id])
+  account Account? @relation(fields: [accountId], references: [id])
+  card    Card?    @relation(fields: [cardId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Invoice {
+  id         Int      @id @default(autoincrement())
+  month      Int      // 1-12
+  year       Int      // ex: 2025
+  closingDay Int      // dia de fechamento (copiado do cartão)
+  dueDay     Int      // dia de vencimento (copiado do cartão)
+  total      Float    @default(0)
+  paid       Boolean  @default(false)
+  paidAt     DateTime?
+
+  cardId Int
+  card   Card    @relation(fields: [cardId], references: [id])
+
+  expenses Expense[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([cardId, month, year]) // 1 fatura por mês/cartão
+}
