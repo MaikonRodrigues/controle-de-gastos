@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { addMonths, isSameMonth, parseISO } from "date-fns";
+import { addMonths, isSameMonth } from "date-fns";
 
 const prisma = new PrismaClient();
 
@@ -12,7 +12,7 @@ export async function processarRecorrencias(userId: number) {
 
   for (const rec of recorrentes) {
     const inicio = rec.startDate;
-    const total = rec.installments;
+    const total = rec.installments ?? 0; // garante que não seja null
 
     for (let i = 0; i < total; i++) {
       const dataParcela = addMonths(inicio, i);
@@ -20,7 +20,7 @@ export async function processarRecorrencias(userId: number) {
       // Só gera se for do mês atual
       if (!isSameMonth(dataParcela, hoje)) continue;
 
-      // Verifica se já foi criada
+      // Verifica se já foi criada a parcela do mês
       const existente = await prisma.expense.findFirst({
         where: {
           title: rec.title,
@@ -28,7 +28,7 @@ export async function processarRecorrencias(userId: number) {
           type: rec.type,
           createdAt: {
             gte: new Date(dataParcela.getFullYear(), dataParcela.getMonth(), 1),
-            lte: new Date(dataParcela.getFullYear(), dataParcela.getMonth() + 1, 0),
+            lt: new Date(dataParcela.getFullYear(), dataParcela.getMonth() + 1, 1),
           },
         },
       });

@@ -50,7 +50,7 @@ export async function POST(req: Request) {
       data: { balance: { decrement: amount } },
     });
 
-    // 3) Busca despesas daquele cartão e mês (ciclo simplificado por mês)
+    // 3) Busca despesas do mês desse cartão
     const despesasDoMes = await prisma.expense.findMany({
       where: {
         cardId,
@@ -71,6 +71,18 @@ export async function POST(req: Request) {
     let invoiceUpdated = null;
 
     if (cycleClosed) {
+      // BUSCA CARTÃO PARA OBTER closingDay e dueDay
+      const card = await prisma.card.findUnique({
+        where: { id: cardId },
+      });
+
+      if (!card) {
+        return NextResponse.json(
+          { error: "Cartão não encontrado." },
+          { status: 404 }
+        );
+      }
+
       // 5) Se ciclo FECHADO → registra fatura como paga
       invoiceUpdated = await prisma.invoice.upsert({
         where: {
@@ -89,14 +101,16 @@ export async function POST(req: Request) {
           cardId,
           month,
           year,
+          total: amount,
           paid: true,
           paidAt: new Date(),
-          total: amount,
+          closingDay: card.closingDay, // OBRIGATÓRIO
+          dueDay: card.dueDay,         // OBRIGATÓRIO
         },
       });
     }
 
-    // 6) Registra uma saída "real" da conta (não volta pra fatura porque cardId = null)
+    // 6) Registra saída REAL da conta (não volta para fatura)
     await prisma.expense.create({
       data: {
         title: cycleClosed
@@ -106,7 +120,7 @@ export async function POST(req: Request) {
         type: "expense",
         userId,
         accountId: conta.id,
-        cardId: null, // importante: não volta para fatura
+        cardId: null,
         categoryId: null,
         createdAt: new Date(),
         invoiceId: invoiceUpdated?.id ?? null,

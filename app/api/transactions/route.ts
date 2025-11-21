@@ -3,11 +3,12 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// GET → Lista todas as transações
+// GET → Lista todas as despesas (ou receitas)
 export async function GET() {
-  const data = await prisma.transaction.findMany({
+  const data = await prisma.expense.findMany({
     orderBy: { createdAt: "desc" }
   });
+
   return NextResponse.json(data);
 }
 
@@ -15,13 +16,17 @@ export async function GET() {
 export async function POST(req: Request) {
   const body = await req.json();
 
-  const transaction = await prisma.transaction.create({
+  const nova = await prisma.expense.create({
     data: {
       title: body.title,
-      amount: body.amount,
-      type: body.type,
-    }
+      amount: Number(body.amount),
+      type: body.type,    // "expense" ou "income"
+      userId: Number(body.userId),
+      accountId: body.accountId ?? null,
+      cardId: body.cardId ?? null,
+      categoryId: body.categoryId ?? null,
+    },
   });
 
-  return NextResponse.json(transaction);
+  return NextResponse.json(nova);
 }
