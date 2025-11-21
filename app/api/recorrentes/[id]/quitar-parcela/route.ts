@@ -29,7 +29,7 @@ export async function POST(
       );
     }
 
-    // Lança a parcela como despesa normal no dia de hoje
+    // Grava a parcela como uma despesa normal
     const expense = await prisma.expense.create({
       data: {
         title: recorrente.title,

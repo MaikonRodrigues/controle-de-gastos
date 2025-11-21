@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 // =====================
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -42,7 +42,7 @@ export async function GET(
 // =====================
 export async function PUT(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -71,8 +71,8 @@ export async function PUT(
 // DELETE
 // =====================
 export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
+ req: Request,
+  { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) {

@@ -6,9 +6,12 @@ const prisma = new PrismaClient();
 // ===============================
 // GET – buscar uma conta específica
 // ===============================
-export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id } = await context.params; // 🔥 AQUI ESTAVA O ERRO
+    const id = Number(params.id);
     const contaId = Number(id);
 
     if (isNaN(contaId)) {
@@ -33,9 +36,12 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
 // ===============================
 // PUT – editar conta
 // ===============================
-export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id } = await context.params;
+    const id = Number(params.id);
     const contaId = Number(id);
 
     const body = await req.json();
@@ -65,9 +71,10 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 // ===============================
 // DELETE – excluir conta
 // ===============================
-export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request,
+  { params }: { params: { id: string } }) {
   try {
-    const { id } = await context.params;
+    const id = Number(params.id);
     const contaId = Number(id);
 
     await prisma.account.delete({

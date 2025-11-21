@@ -6,8 +6,8 @@ import { authOptions } from "../../auth/[...nextauth]/route";
 const prisma = new PrismaClient();
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
+   req: Request,
+  { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user?.id) {

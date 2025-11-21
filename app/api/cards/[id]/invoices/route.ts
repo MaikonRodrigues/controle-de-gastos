@@ -8,9 +8,9 @@ const prisma = new PrismaClient();
 // ------------------------------------------------------
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
+  const id = Number(params.id);
   const cardId = Number(id);
 
   if (isNaN(cardId)) {

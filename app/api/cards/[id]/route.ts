@@ -8,10 +8,9 @@ const prisma = new PrismaClient();
 ========================================= */
 export async function GET(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+   { params }: { params: { id: string } }
 ) {
-  try {
-    const params = await context.params;
+  try {   
     const id = Number(params.id);
 
     if (isNaN(id)) {
@@ -44,10 +43,9 @@ export async function GET(
 ========================================= */
 export async function PUT(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+   { params }: { params: { id: string } }
 ) {
-  try {
-    const params = await context.params;
+  try {    
     const id = Number(params.id);
 
     if (isNaN(id)) {
