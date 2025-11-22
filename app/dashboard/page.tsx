@@ -50,6 +50,7 @@ export default async function Dashboard() {
                 <DropdownLink href="/nova-saida" icon="➕" label="Novo Gasto" color="text-red-400" />
                 <DropdownLink href="/contas" icon="🏦" label="Contas" color="text-blue-400" />
                 <DropdownLink href="/cartoes" icon="💳" label="Cartões" color="text-purple-400" />
+                <DropdownLink href="/recorrentes" icon="🔁" label="Recorrentes" color="text-purple-400" />
                 <DropdownLink href="/categorias" icon="🏷️" label="Categorias" color="text-yellow-400" />
               </div>
             </details>

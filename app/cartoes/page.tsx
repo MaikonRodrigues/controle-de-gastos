@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import CardItem from "./carditem";
 
 export default function CartoesPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   const [cards, setCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,18 +30,23 @@ export default function CartoesPage() {
   }
 
   useEffect(() => {
-    loadCards();
-  }, []);
+    if (status === "authenticated") {
+      loadCards();
+    }
+  }, [status]);
 
-  if (loading)
-    return (
-      <div className="text-white p-10">Carregando cartões...</div>
-    );
+  if (status === "loading" || loading) {
+    return <div className="text-white p-10">Carregando cartões...</div>;
+  }
+
+  if (!session) {
+    router.push("/login");
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-10">
-
-      {/* BOTÃO VOLTAR AO DASHBOARD */}
+      {/* Voltar */}
       <button
         onClick={() => router.push("/dashboard")}
         className="mb-8 px-5 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition text-white shadow"
@@ -47,7 +54,7 @@ export default function CartoesPage() {
         ⬅️ Voltar ao Dashboard
       </button>
 
-      {/* TÍTULO + BOTÃO NOVO */}
+      {/* Título */}
       <div className="flex justify-between items-center mb-10">
         <h1 className="text-3xl font-bold">Cartões</h1>
 
@@ -57,19 +64,17 @@ export default function CartoesPage() {
         >
           ➕ Novo Cartão
         </a>
-        
       </div>
 
-      {/* GRID DE CARTÕES */}
+      {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {cards.length === 0 && (
           <p className="text-gray-400">Nenhum cartão cadastrado.</p>
         )}
 
         {cards.map((card: any) => (
-          <CardItem key={card.id} card={card} />          
+          <CardItem key={card.id} card={card} />
         ))}
-        
       </div>
     </div>
   );

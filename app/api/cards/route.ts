@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 const prisma = new PrismaClient();
 
@@ -7,23 +9,24 @@ const prisma = new PrismaClient();
    GET → Lista todos os cartões do usuário
 ========================================= */
 
-export async function GET(req: Request) {
-  try {
-    const cards = await prisma.card.findMany({
-      include: {
-        account: true,
-        expenses: true,
-      },
-    });
+export async function GET() {
+  const session = await getServerSession(authOptions);
 
-    return NextResponse.json(cards, { status: 200 });
-  } catch (e: any) {
-    console.error("🔥 ERRO NO GET /api/cards:", e);
-    return NextResponse.json(
-      { error: "Erro ao carregar cartões" },
-      { status: 500 }
-    );
+  if (!session || !session.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const userId = Number(session.user.id);
+
+  const cards = await prisma.card.findMany({
+    where: { userId },
+    include: {
+      account: true,
+      expenses: true,
+    },
+  });
+
+  return NextResponse.json(cards);
 }
 
 /* =========================================
